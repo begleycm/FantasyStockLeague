@@ -25,3 +25,14 @@ dist-ssr
 
 # api keys
 .env
+
+# Static files
+server/staticfiles/
+staticfiles/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python

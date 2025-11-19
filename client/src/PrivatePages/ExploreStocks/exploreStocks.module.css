@@ -1,0 +1,74 @@
+/* ExploreStocks page container */
+.exploreStocksContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 20px;
+  height: calc(100vh - 80px);
+  margin-top: 80px;
+  background: #f3f4f6;
+  box-sizing: border-box;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+
+.contentContainer {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.leftSide {
+  flex: 1;
+  max-width: 400px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.rightSide {
+  flex: 2;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Prevent horizontal overflow */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .exploreStocksContainer {
+    flex-direction: column;
+    height: auto;
+    min-height: calc(100vh - 80px);
+    padding: 16px;
+    gap: 20px;
+  }
+  
+  .contentContainer {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .leftSide {
+    max-width: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .exploreStocksContainer {
+    padding: 12px;
+    gap: 16px;
+  }
+  
+}

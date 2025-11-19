@@ -1,0 +1,394 @@
+.leaguesContainer {
+  margin-top: 80px;
+  min-height: calc(100vh - 80px);
+  background: #f3f4f6;
+  padding: 40px;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.leaguesContent {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+.welcomeText {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #000000;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.025em;
+}
+
+.username {
+  color: #6366f1;
+}
+
+.superuserBadge {
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: #f59e0b;
+  color: #ffffff;
+  padding: 6px 16px;
+  border-radius: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.subtitle {
+  font-size: 1.25rem;
+  color: #6b7280;
+  margin: 0;
+  font-weight: 500;
+}
+
+.errorMessage {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid #fecaca;
+  text-align: center;
+  margin-bottom: 24px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 48px;
+  flex-wrap: wrap;
+}
+
+.createButton,
+.joinButton {
+  padding: 16px 32px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-family: inherit;
+}
+
+.createButton {
+  background: #6366f1;
+  color: #ffffff;
+}
+
+.createButton:hover {
+  background: #4f46e5;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  transform: translateY(-1px);
+}
+
+.joinButton {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.joinButton:hover {
+  background: #059669;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  transform: translateY(-1px);
+}
+
+.leaguesSection {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.sectionTitle {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #000000;
+  margin: 0 0 24px 0;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #6b7280;
+  font-size: 1.1rem;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6b7280;
+}
+
+.emptyState p {
+  margin: 8px 0;
+  font-size: 1.1rem;
+}
+
+.leaguesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.leagueCard {
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.leagueCard:hover {
+  border-color: #6366f1;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+  transform: translateY(-2px);
+}
+
+.leagueName {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #000000;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.adminBadge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #6366f1;
+  color: #ffffff;
+  padding: 4px 12px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.viewOnlyBadge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #9ca3af;
+  color: #ffffff;
+  padding: 4px 12px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.leagueInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.leagueDetail {
+  font-size: 0.95rem;
+  color: #4b5563;
+  margin: 0;
+}
+
+.label {
+  font-weight: 600;
+  color: #000000;
+  margin-right: 8px;
+}
+
+.active {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.inactive {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+/* Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.modalContent {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 32px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.modalContent h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #000000;
+  margin: 0 0 24px 0;
+}
+
+.formGroup {
+  margin-bottom: 24px;
+}
+
+.formGroup label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #000000;
+  margin-bottom: 8px;
+  letter-spacing: 0.025em;
+}
+
+.formGroup input {
+  width: 100%;
+  padding: 16px 24px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #000000;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.formGroup input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+.formGroup input::placeholder {
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 32px;
+}
+
+.infoMessage {
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 20px;
+}
+
+.infoMessage p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.setStartDateButton {
+  margin-top: 12px;
+  padding: 10px 20px;
+  background-color: #6366f1;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.setStartDateButton:hover {
+  background-color: #4f46e5;
+}
+
+.cancelButton,
+.submitButton {
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.cancelButton {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.cancelButton:hover {
+  background: #e5e7eb;
+}
+
+.submitButton {
+  background: #6366f1;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.submitButton:hover {
+  background: #4f46e5;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .leaguesContainer {
+    padding: 24px 16px;
+  }
+
+  .welcomeText {
+    font-size: 2rem;
+  }
+
+  .subtitle {
+    font-size: 1.1rem;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .createButton,
+  .joinButton {
+    width: 100%;
+  }
+
+  .leaguesGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .modalContent {
+    padding: 24px;
+  }
+}
+

@@ -1,0 +1,204 @@
+.teamCard {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+  flex: 1;
+  min-height: 0;
+}
+
+.teamCard:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.teamInfo {
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.teamHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.teamName {
+  margin: 0;
+  color: #000000;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.teamRecord {
+  background: #6366f1;
+  color: #ffffff;
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.05em;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.statRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  transition: all 0.2s ease;
+}
+
+.statRow:hover {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 16px 16px;
+  margin: 0 -16px;
+}
+
+.statValue {
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: #000000;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+}
+
+.profitPositive {
+  color: #059669;
+}
+
+.profitNegative {
+  color: #dc2626;
+}
+
+.stocksSection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.stocksTitle {
+  margin: 0 0 16px 0;
+  color: #000000;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.stocksTable {
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.stocksHeader {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 20px;
+  background: #6366f1;
+  color: #ffffff;
+  font-weight: 700;
+  padding: 20px 24px;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+  border-bottom: 1px solid #4f46e5;
+}
+
+.stocksBody {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.stockRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 20px;
+  padding: 20px 24px;
+  border-bottom: 1px solid #f3f4f6;
+  align-items: center;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  min-width: 0;
+}
+
+.stockRow:last-child {
+  border-bottom: none;
+}
+
+.stockRow:hover {
+  background: #e0e7ff;
+  color: #000000;
+}
+
+.ticker {
+  font-weight: 700;
+  color: #000000;
+  font-size: 0.95rem;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+}
+
+.stockProfit {
+  font-weight: 600;
+  font-size: 0.9rem;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .teamCard {
+    padding: 24px;
+  }
+  
+  .teamName {
+    font-size: 1.75rem;
+  }
+  
+  .statValue {
+    font-size: 1.5rem;
+  }
+  
+  .stocksHeader,
+  .stockRow {
+    padding: 16px 20px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .teamCard {
+    padding: 20px;
+  }
+  
+  .teamName {
+    font-size: 1.5rem;
+  }
+  
+  .statValue {
+    font-size: 1.25rem;
+  }
+  
+  .stocksHeader,
+  .stockRow {
+    padding: 14px 18px;
+    font-size: 0.85rem;
+  }
+}

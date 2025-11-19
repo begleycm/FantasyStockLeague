@@ -1,25 +1,25 @@
-import { useState } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
+import { BrowserRouter, Routes, Route } from "react-router-dom"
 import Signup from "./PublicPages/Signup/signup.jsx"
 import Login from "./PublicPages/Login/login.jsx"
 import Home from "./PrivatePages/Home/home.jsx"
-import ExploreStocks from "./PrivatePages/LeaguePages/ExploreStocks"
-import LeagueHomePage from "./PrivatePages/LeaguePages/LeagueHomePage"
-import MatchUp from "./PrivatePages/LeaguePages/MatchUp"
-import MyStocks from "./PrivatePages/LeaguePages/MyStocks"
+import ProtectedRoute from "./components/protectedRoute.jsx"
+import LeagueRouteGuard from "./components/LeagueRouteGuard.jsx"
+import MatchUp from "./PrivatePages/MatchUp/matchUp.jsx"
+import ExploreStocks from "./PrivatePages/ExploreStocks/exploreStocks.jsx"
+import Leagues from "./PrivatePages/Leagues/leagues.jsx"
 
 function App() {
   return (
-    <BrowserRouter>
-      {/* These will be Public Pages*/}
-      <Route path="/Signup" element={<Signup></Signup>}></Route>
-      <Route path="/Login" element={<Login></Login>}></Route>
-      {/* These will be Private Pages*/}
-      <Route path="/Private/Home" element={<Home></Home>}></Route>
-      <Route path="/Private/ExploreStocks" element={<ExploreStocks></ExploreStocks>}></Route>
-      <Route path="/Private/LeagueHomePage" element={<LeagueHomePage></LeagueHomePage>}></Route>
-      <Route path="/Private/MatchUp" element={<MatchUp></MatchUp>}></Route>
-      <Route path="/Private/MyStocks" element={<MyStocks></MyStocks>}></Route>
+      <BrowserRouter>
+        <Routes>
+        <Route path="/Signup" element={<Signup></Signup>}></Route>
+        <Route path="/Login" element={<Login></Login>}></Route>
+
+        <Route path="/Private/Leagues" element={<ProtectedRoute><Leagues></Leagues></ProtectedRoute>}></Route>
+        <Route path="/Private/Home" element={<ProtectedRoute><LeagueRouteGuard><Home></Home></LeagueRouteGuard></ProtectedRoute>}></Route>
+        <Route path="/Private/MatchUp" element={<ProtectedRoute><LeagueRouteGuard><MatchUp></MatchUp></LeagueRouteGuard></ProtectedRoute>}></Route>
+        <Route path="/Private/ExploreStocks" element={<ProtectedRoute><LeagueRouteGuard><ExploreStocks></ExploreStocks></LeagueRouteGuard></ProtectedRoute>}></Route>
+      </Routes>
     </BrowserRouter>
   )
 }

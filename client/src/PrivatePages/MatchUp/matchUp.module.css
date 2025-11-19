@@ -1,0 +1,110 @@
+/* MatchUp page container */
+.matchUpContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 20px;
+  height: calc(100vh - 80px);
+  margin-top: 80px;
+  background: #f3f4f6;
+  box-sizing: border-box;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.matchupHeader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 40px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.matchupHeader h1 {
+  margin: 0;
+  color: #000000;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.vsContainer {
+  background: #6366f1;
+  color: #ffffff;
+  padding: 16px 32px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: 0.1em;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.vsText {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+}
+
+.teamsContainer {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Prevent horizontal overflow */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .matchUpContainer {
+    flex-direction: column;
+    height: auto;
+    min-height: calc(100vh - 80px);
+    padding: 16px;
+    gap: 20px;
+  }
+  
+  .teamsContainer {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .matchupHeader {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+  
+  .matchupHeader h1 {
+    font-size: 2rem;
+  }
+  
+  .vsContainer {
+    padding: 12px 24px;
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .matchUpContainer {
+    padding: 12px;
+    gap: 16px;
+  }
+  
+  .matchupHeader h1 {
+    font-size: 1.75rem;
+  }
+  
+  .vsContainer {
+    padding: 10px 20px;
+    font-size: 1.1rem;
+  }
+}

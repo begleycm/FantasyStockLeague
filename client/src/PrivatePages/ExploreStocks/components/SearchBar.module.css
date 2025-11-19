@@ -1,0 +1,78 @@
+.searchContainer {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 600px;
+}
+
+.searchInputWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 16px 24px;
+  padding-right: 48px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #000000;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+  transform: translateY(-1px);
+}
+
+.searchInput::placeholder {
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.clearButton {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #6b7280;
+  color: #ffffff;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clearButton:hover {
+  background: #4b5563;
+  transform: translateY(-50%) scale(1.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .searchInput {
+    padding: 14px 20px;
+    padding-right: 44px;
+    font-size: 1rem;
+  }
+  
+  .clearButton {
+    width: 22px;
+    height: 22px;
+    font-size: 14px;
+  }
+}

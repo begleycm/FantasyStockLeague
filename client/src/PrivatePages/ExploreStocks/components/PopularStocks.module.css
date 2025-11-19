@@ -1,0 +1,146 @@
+.popularSection {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.popularSection:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 24px 0;
+  border-bottom: 2px solid #e5e7eb;
+  height: 72px;
+}
+
+.sectionHeader h2 {
+  margin: 0;
+  color: #000000;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+
+.stocksList {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.stockItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.stockItem:hover {
+  background: #e0e7ff;
+  border-color: #6366f1;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+}
+
+.stockInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 50%;
+  flex: 0 0 50%;
+}
+
+.ticker {
+  font-weight: 700;
+  color: #000000;
+  font-size: 1.1rem;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+}
+
+.stockName {
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.stockPrice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.price {
+  font-weight: 700;
+  color: #000000;
+  font-size: 1.1rem;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+}
+
+.change {
+  font-weight: 600;
+  font-size: 0.9rem;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+}
+
+.positive {
+  color: #059669;
+}
+
+.negative {
+  color: #dc2626;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .popularSection {
+    padding: 24px;
+  }
+  
+  .stockItem {
+    padding: 14px 16px;
+  }
+  
+  .ticker {
+    font-size: 1rem;
+  }
+  
+  .price {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .popularSection {
+    padding: 20px;
+  }
+  
+  .stockItem {
+    padding: 12px 14px;
+  }
+}

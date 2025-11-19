@@ -1,0 +1,5 @@
+pip install django djangorestframework
+pip install djangorestframework-simplejwt
+pip install pytz
+pip install django-cors-headers
+pip install whitenoise
