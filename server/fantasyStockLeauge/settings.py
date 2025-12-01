@@ -30,7 +30,17 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-jkjkvnv$t%4$vu4wp%ztipjjab
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = ENVIRONMENT != "production"
 
-ALLOWED_HOSTS = ['*'] if DEBUG else [os.getenv('DO_APP_URL', ''), 'localhost', '127.0.0.1']
+# Parse DO_APP_URL to extract the domain
+app_url = os.getenv('DO_APP_URL', '')
+app_domain = app_url.replace('https://', '').replace('http://', '').rstrip('/') if app_url else ''
+
+ALLOWED_HOSTS = ['*'] if DEBUG else [
+    app_domain,
+    'fantasy-stock-league-backend-83vib.ondigitalocean.app',
+    '.ondigitalocean.app',
+    'localhost',
+    '127.0.0.1'
+]
 
 
 # Application definition
@@ -88,8 +98,16 @@ WSGI_APPLICATION = 'fantasyStockLeauge.wsgi.application'
 
 if ENVIRONMENT == "production":
     DATABASES = {
-        "default": dj_database_url.config(default=os.getenv("DATABASE_URL"))
+        "default": dj_database_url.config(
+            default=os.getenv("DATABASE_URL"),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
+    # Add OPTIONS to handle PostgreSQL schema permissions
+    if DATABASES["default"]["ENGINE"] == "django.db.backends.postgresql":
+        DATABASES["default"].setdefault("OPTIONS", {})
+        DATABASES["default"]["OPTIONS"]["options"] = "-c search_path=public"
 else:
     DATABASES = {
         'default': {
