@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { API_URL } from '../../config'
 import NavBar from "../components/navBar.jsx"
 import TeamCard from "./components/TeamCard.jsx"
 import styles from "./matchUp.module.css"
@@ -33,7 +34,7 @@ function MatchUp() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/leagues/${leagueId}/matchup/`, {
+      const response = await fetch(`${API_URL}/api/leagues/${leagueId}/matchup/`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

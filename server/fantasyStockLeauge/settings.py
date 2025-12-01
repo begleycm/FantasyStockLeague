@@ -166,6 +166,8 @@ if ENVIRONMENT == "production":
     frontend_url = os.getenv('FRONTEND_URL')
     if frontend_url:
         CORS_ALLOWED_ORIGINS.append(frontend_url)
+        # Also add without trailing slash if it has one
+        CORS_ALLOWED_ORIGINS.append(frontend_url.rstrip('/'))
 
 CORS_ALLOW_CREDENTIALS = True
 

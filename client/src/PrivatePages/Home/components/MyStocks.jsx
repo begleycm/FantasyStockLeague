@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '../../../config'
 import Pagination from '../../../components/Pagination.jsx'
 import styles from './MyStocks.module.css'
 
@@ -31,7 +32,7 @@ function MyStocks() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/owned-stocks/${leagueId}/`, {
+      const response = await fetch(`${API_URL}/api/owned-stocks/${leagueId}/`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

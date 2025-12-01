@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '../../../config'
 import styles from './LeagueLeaderboard.module.css'
 
 function LeagueLeaderboard() {
@@ -26,7 +27,7 @@ function LeagueLeaderboard() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/leagues/${leagueId}/leaderboard/`, {
+      const response = await fetch(`${API_URL}/api/leagues/${leagueId}/leaderboard/`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
