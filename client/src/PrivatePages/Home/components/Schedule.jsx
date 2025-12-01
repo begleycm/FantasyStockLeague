@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '../../../config'
 import styles from './Schedule.module.css'
 
 function Schedule() {
@@ -28,7 +29,7 @@ function Schedule() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/leagues/${leagueId}/schedule/`, {
+      const response = await fetch(`${API_URL}/api/leagues/${leagueId}/schedule/`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { API_URL } from '../../config'
 import NavBar from '../components/navBar.jsx'
 import styles from './leagues.module.css'
 
@@ -82,7 +83,7 @@ function Leagues() {
     // Start date is no longer required - will be set when 8 players join
 
     try {
-      const response = await fetch('http://localhost:8000/api/leagues/', {
+      const response = await fetch(`${API_URL}/api/leagues/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -132,7 +133,7 @@ function Leagues() {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/api/leagues/join/', {
+      const response = await fetch(`${API_URL}/api/leagues/join/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -260,7 +261,7 @@ function Leagues() {
 
     const token = localStorage.getItem('access_token')
     try {
-      const response = await fetch(`http://localhost:8000/api/leagues/${selectedLeagueForStartDate}/set-start-date/`, {
+      const response = await fetch(`${API_URL}/api/leagues/${selectedLeagueForStartDate}/set-start-date/`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

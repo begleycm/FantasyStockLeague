@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '../../config'
 import NavBar from "../components/navBar.jsx"
 import SearchBar from "./components/SearchBar.jsx"
 import PopularStocks from "./components/PopularStocks.jsx"
@@ -14,7 +15,7 @@ function ExploreStocks() {
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const getStocks = async() => {
-    const response = await fetch("http://localhost:8000/api/stocks/")
+    const response = await fetch(`${API_URL}/api/stocks/`)
     if (response.ok) {
       const data = await response.json()
       return data

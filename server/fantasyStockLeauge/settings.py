@@ -25,7 +25,7 @@ ENVIRONMENT = os.getenv("DJANGO_ENV", "production")
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-jkjkvnv$t%4$vu4wp%ztipjjabkb-ha%q^f05t+!dx5-g4h2y='
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-jkjkvnv$t%4$vu4wp%ztipjjabkb-ha%q^f05t+!dx5-g4h2y=')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = ENVIRONMENT != "production"
@@ -160,6 +160,14 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
+
+# Add production frontend URL when deploying
+if ENVIRONMENT == "production":
+    frontend_url = os.getenv('FRONTEND_URL')
+    if frontend_url:
+        CORS_ALLOWED_ORIGINS.append(frontend_url)
+        # Also add without trailing slash if it has one
+        CORS_ALLOWED_ORIGINS.append(frontend_url.rstrip('/'))
 
 CORS_ALLOW_CREDENTIALS = True
 

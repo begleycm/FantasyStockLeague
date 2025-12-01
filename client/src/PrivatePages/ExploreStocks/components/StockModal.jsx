@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '../../../config'
 import styles from './StockModal.module.css'
 
 function StockModal({ stock, isOpen, onClose }) {
@@ -24,7 +25,7 @@ function StockModal({ stock, isOpen, onClose }) {
     
     const token = localStorage.getItem('access_token')
     try {
-      const response = await fetch(`http://localhost:8000/api/stocks/info/${leagueId}/${stock.ticker}/`, {
+      const response = await fetch(`${API_URL}/api/stocks/info/${leagueId}/${stock.ticker}/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -85,7 +86,7 @@ function StockModal({ stock, isOpen, onClose }) {
 
     const token = localStorage.getItem('access_token')
     try {
-      const response = await fetch('http://localhost:8000/api/stocks/buy/', {
+      const response = await fetch(`${API_URL}/api/stocks/buy/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -142,7 +143,7 @@ function StockModal({ stock, isOpen, onClose }) {
 
     const token = localStorage.getItem('access_token')
     try {
-      const response = await fetch('http://localhost:8000/api/stocks/sell/', {
+      const response = await fetch(`${API_URL}/api/stocks/sell/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
