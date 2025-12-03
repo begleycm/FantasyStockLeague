@@ -15,38 +15,20 @@ def getTotalStockValue(league_id, user):
         total += Decimal(str(stock.shares)) * Decimal(str(stock.stock.current_price))
     return float(total)
 
-def getUserWeeklyStockProfits(league_id, user):
+def getUserStockProfits(league_id, user):
+    """Get total profit for each stock owned by the user"""
     owned_stocks = getOwnedStocks(league_id, user)
     stocks = []
 
     for stock in owned_stocks:
-        weekly_profit = (stock.price_at_start_of_week - stock.stock.current_price) * stock.shares
+        if stock.avg_price_per_share == 0:
+            profit = 0
+        else:
+            profit = (stock.stock.current_price - stock.avg_price_per_share) * stock.shares
         data = {
             "ticker": stock.stock.ticker,
-            "weekly_profit": weekly_profit,
+            "profit": float(profit),
         }
         stocks.append(data)
 
     return stocks
-
-def getCurrentOpponent(league_id, user):
-    current_league = League.objects.get(league_id=league_id)
-    today = date.today()
-    week_number = (today - current_league.start_date).days // 7 + 1
-    participant = LeagueParticipant.objects.get(league=current_league, user=user)
-
-    # Now find matchup where this participant is either participant1 or participant2
-    from catalog.models import Matchup
-    matchup = Matchup.objects.filter(
-        league=current_league,
-        week_number=week_number
-    ).filter(
-        (models.Q(participant1=participant) | models.Q(participant2=participant))
-    ).first()
-
-    if matchup.participant1 == participant:
-        opponent = matchup.participant2
-    else:
-        opponent = matchup.participant1
-
-    return opponent

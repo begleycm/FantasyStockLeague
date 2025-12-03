@@ -13,6 +13,17 @@ class UserSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(**validated_data)
         return user
 
+class UpdateUsernameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["username"]
+    
+    def validate_username(self, value):
+        # Check if username already exists (excluding current user)
+        if self.instance and User.objects.exclude(pk=self.instance.pk).filter(username=value).exists():
+            raise serializers.ValidationError("A user with this username already exists.")
+        return value
+
 class StockSerializer(serializers.ModelSerializer):
     class Meta:
         model = Stock

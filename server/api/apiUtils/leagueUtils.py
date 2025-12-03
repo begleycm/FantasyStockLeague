@@ -86,9 +86,80 @@ def create_league_for_user(league_data, user):
     return False, {'errors': serializer.errors}, 400
 
 
+# Cache for all stocks data (30-minute cooldown)
+_stocks_cache = None
+_stocks_cache_timestamp = None
+CACHE_DURATION = 30 * 60  # 30 minutes in seconds
+
+def _get_cached_all_stocks():
+    """Get cached all stocks data if still valid, otherwise None."""
+    global _stocks_cache, _stocks_cache_timestamp
+    import time
+    
+    if _stocks_cache is not None and _stocks_cache_timestamp is not None:
+        age = time.time() - _stocks_cache_timestamp
+        if age < CACHE_DURATION:
+            return _stocks_cache
+        else:
+            # Cache expired
+            _stocks_cache = None
+            _stocks_cache_timestamp = None
+    return None
+
+def _update_all_stocks_cache():
+    """Update all stocks and cache the data."""
+    global _stocks_cache, _stocks_cache_timestamp
+    import time
+    import update_stocks as update_stocks_module
+    from catalog.models import Stock
+    
+    # Always update stocks before caching
+    try:
+        update_stocks_module.update_stocks(force=True)
+    except Exception:
+        pass  # Continue even if update fails
+    
+    # Get all stocks from database
+    stock_queryset = Stock.objects.all()
+    stocks_data = {}
+    
+    for stock in stock_queryset:
+        try:
+            current = float(stock.current_price) if stock.current_price else 0.0
+            start = float(stock.start_price) if stock.start_price else 0.0
+            
+            # Calculate daily change
+            if start > 0:
+                daily_change = current - start
+                try:
+                    daily_change_percent = (daily_change / start) * 100 if start != 0 else None
+                except Exception:
+                    daily_change_percent = None
+            else:
+                daily_change = None
+                daily_change_percent = None
+            
+            stocks_data[stock.ticker] = {
+                "ticker": stock.ticker,
+                "name": stock.name,
+                "start_price": start,
+                "current_price": current,
+                "daily_change": daily_change,
+                "daily_change_percent": daily_change_percent,
+            }
+        except Exception:
+            continue
+    
+    # Cache the data
+    _stocks_cache = stocks_data
+    _stocks_cache_timestamp = time.time()
+    
+    return stocks_data
+
 def get_owned_stocks_data(league_id, user):
     """
     Get all owned stocks data for a user in a league.
+    Uses cached all stocks data (30-minute cooldown) to ensure prices align with explore stocks.
     
     Args:
         league_id: UUID of the league
@@ -103,34 +174,58 @@ def get_owned_stocks_data(league_id, user):
         participant = LeagueParticipant.objects.get(league=league, user=user)
         current_balance = float(participant.current_balance)
         
-        # Get owned stocks
+        # Get cached all stocks data (or update if cache expired)
+        cached_stocks = _get_cached_all_stocks()
+        if cached_stocks is None:
+            # Cache expired or doesn't exist, update and cache
+            all_stocks_data = _update_all_stocks_cache()
+        else:
+            # Use cached data
+            all_stocks_data = cached_stocks
+        
+        # Get owned stocks from database (always fresh from DB)
         owned_stocks = getOwnedStocks(league_id, user)
         stocks = []
 
         for stock in owned_stocks:
             try:
+                ticker = stock.stock.ticker
+                
+                # Get stock data from cache (ensures prices align with explore stocks)
+                stock_data = all_stocks_data.get(ticker, {})
+                
+                # Merge cached stock data with owned stock details from DB
                 data = {
                     "shares": float(stock.shares),
-                    "current_price": float(stock.stock.current_price),
-                    "start_price": float(stock.stock.start_price),
-                    "price_at_start_of_week": float(stock.price_at_start_of_week),
-                    "ticker": stock.stock.ticker,
-                    "name": stock.stock.name,
+                    "avg_price_per_share": float(stock.avg_price_per_share),
+                    "ticker": ticker,
+                    "name": stock_data.get("name", stock.stock.name),
+                    "current_price": stock_data.get("current_price", float(stock.stock.current_price)),
+                    "start_price": stock_data.get("start_price", float(stock.stock.start_price)),
+                    "daily_change": stock_data.get("daily_change"),
+                    "daily_change_percent": stock_data.get("daily_change_percent"),
                 }
                 stocks.append(data)
             except Exception as e:
                 print(f"Error processing stock {stock.stock.ticker}: {str(e)}")
                 continue
         
-        # Calculate total stock value
-        total_stock_value = getTotalStockValue(league_id, user)
-        total_stock_value_float = float(total_stock_value) if total_stock_value is not None else 0.0
+        # Calculate total stock value using cached prices
+        total_stock_value = 0.0
+        for stock in owned_stocks:
+            try:
+                ticker = stock.stock.ticker
+                stock_data = all_stocks_data.get(ticker, {})
+                current_price = stock_data.get("current_price", float(stock.stock.current_price))
+                total_stock_value += current_price * float(stock.shares)
+            except Exception:
+                continue
         
         return True, {
             "stocks": stocks,
             "current_balance": current_balance,
-            "total_stock_value": total_stock_value_float,
-            "net_worth": total_stock_value_float + current_balance
+            "total_stock_value": total_stock_value,
+            "net_worth": total_stock_value + current_balance
         }, 200
         
     except League.DoesNotExist:

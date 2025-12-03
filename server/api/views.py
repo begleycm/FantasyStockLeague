@@ -2,12 +2,16 @@ from datetime import timedelta
 from decimal import Decimal
 from django.contrib.auth.models import User
 from rest_framework import generics
-from api.serializer import LeaguesSerializer, StockSerializer, UserSerializer
+from api.serializer import LeaguesSerializer, StockSerializer, UserSerializer, UpdateUsernameSerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from catalog.models import LeagueParticipant, Stock, UserLeagueStock, League
-from api.apiUtils.utils import getCurrentOpponent, getUserWeeklyStockProfits, getOwnedStocks, getTotalStockValue
+from api.apiUtils.utils import getUserStockProfits, getOwnedStocks, getTotalStockValue
 from api.apiUtils.joinLeague import join_league
+from datetime import date, timedelta
+from catalog.views import get_daily_closing_price
+from catalog.stock_populator import update_stock_prices
+import update_stocks as update_stocks_module
 
 class CreateUserView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -20,16 +24,57 @@ class ViewAllStocks(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
 
     def get(self, request, format=None):
+        # Get stocks from database first (before any updates)
+        stock_queryset = Stock.objects.all()
+        
+        # If no stocks exist, return empty list immediately
+        if not stock_queryset.exists():
+            return Response([], status=200)
+        
+        # Always update stocks before returning data
+        try:
+            update_stocks_module.update_stocks(force=True)
+        except Exception:
+            # Don't fail the request if update logic errors — just log and continue
+            # We'll return the existing data from the database
+            pass
+
+        # Refresh the queryset to get updated prices
+        stock_queryset = Stock.objects.all()
         stocks = []
-        for stock in Stock.objects.all():
+        
+        for stock in stock_queryset:
+            try:
+                # Ensure we have valid numeric values
+                current = float(stock.current_price) if stock.current_price else 0.0
+                start = float(stock.start_price) if stock.start_price else 0.0
+            except (ValueError, TypeError):
+                current = 0.0
+                start = 0.0
+
+            # Calculate daily change based on start_price (which is yesterday's closing price)
+            if start > 0:
+                daily_change = current - start
+                try:
+                    daily_change_percent = (daily_change / start) * 100 if start != 0 else None
+                except Exception:
+                    daily_change_percent = None
+            else:
+                daily_change = None
+                daily_change_percent = None
+
             data = {
-                "ticker":stock.ticker,
-                "name":stock.name,
-                "start_price":stock.start_price,
-                "current_price":stock.current_price,
+                "ticker": stock.ticker,
+                "name": stock.name,
+                "start_price": start,  # Yesterday's closing price (updated daily)
+                "current_price": current,  # Current price
+                "daily_change": daily_change,
+                "daily_change_percent": daily_change_percent,
             }
             stocks.append(data)
-        return Response(stocks)
+
+        # Always return the stocks data, even if empty
+        return Response(stocks, status=200)
 
 
 class ViewAllOwnedStocks(generics.ListCreateAPIView):
@@ -51,20 +96,6 @@ class GetStockInfoView(generics.RetrieveAPIView):
         
         success, response_data, status_code = get_stock_info_data(league_id, ticker, request.user)
         return Response(response_data, status=status_code)
-
-class ViewUserWeeklyProfits(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, league_id, format=None):
-        stocks = getUserWeeklyStockProfits(league_id, request.user)
-        return Response(stocks)
-
-class ViewOpponentWeeklyProfits(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, league_id, format=None):
-        stocks = getUserWeeklyStockProfits(league_id, getCurrentOpponent(league_id, request.user))
-        return Response(stocks)
         
 class LeagueView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -75,17 +106,13 @@ class LeagueView(generics.ListCreateAPIView):
         league_participants = LeagueParticipant.objects.get(League=current_league)
         leagueUserData = []
         for league_participant in league_participants:
-            total_profit = 0
-            for stock in getOwnedStocks(league_id, league_participant.user):
-                total_profit += (stock.price_at_start_of_week - stock.stock.current_price) * stock.shares
             data = {
-                "user":league_participant.user,
-                "wins":league_participant.wins,
-                "losses":league_participant.losses,
-                "net_worth": getTotalStockValue(league_id, league_participant.user) + league_participant.current_balance,
-                "weekly_profit": total_profit,
+                "user":league_participant.user.username,
+                "net_worth": getTotalStockValue(league_id, league_participant.user) + float(league_participant.current_balance),
             }
             leagueUserData.append(data)
+        # Sort by net worth descending
+        leagueUserData.sort(key=lambda x: x['net_worth'], reverse=True)
         return Response(leagueUserData)
 
 class ViewAllLeagues(generics.ListCreateAPIView):
@@ -172,10 +199,8 @@ class GetLeagueLeaderboardView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, league_id, format=None):
-        """Get the leaderboard for a league sorted by wins/losses and net worth"""
+        """Get the leaderboard for a league sorted by net worth"""
         try:
-            from api.apiUtils.matchupUtils import get_league_leaderboard_data
-            
             league = League.objects.get(league_id=league_id)
             
             # Verify user is a participant
@@ -184,8 +209,22 @@ class GetLeagueLeaderboardView(generics.RetrieveAPIView):
             except LeagueParticipant.DoesNotExist:
                 return Response({'error': 'You are not a participant in this league'}, status=404)
             
-            leaderboard_data = get_league_leaderboard_data(league, league_id, user_participant)
-            return Response(leaderboard_data, status=200)
+            # Get all participants
+            participants = league.participants.all()
+            
+            leaderboard_data = []
+            for participant in participants:
+                net_worth = getTotalStockValue(league_id, participant.user) + float(participant.current_balance)
+                leaderboard_data.append({
+                    'username': participant.user.username,
+                    'net_worth': round(net_worth, 2),
+                    'is_current_user': participant == user_participant,
+                })
+            
+            # Sort by net worth descending
+            leaderboard_data.sort(key=lambda x: x['net_worth'], reverse=True)
+            
+            return Response({'leaderboard': leaderboard_data}, status=200)
             
         except League.DoesNotExist:
             return Response({'error': 'League not found'}, status=404)
@@ -196,88 +235,141 @@ class GetLeagueLeaderboardView(generics.RetrieveAPIView):
             return Response({'error': f'An error occurred: {str(e)}'}, status=500)
 
 
-class GetParticipantScheduleView(generics.RetrieveAPIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, league_id, format=None):
-        """Get the schedule for the current user in a specific league"""
-        try:
-            from api.apiUtils.matchupUtils import get_participant_schedule_data
-            
-            league = League.objects.get(league_id=league_id)
-            participant = LeagueParticipant.objects.get(league=league, user=request.user)
-            
-            schedule_data = get_participant_schedule_data(league, participant)
-            return Response(schedule_data, status=200)
-            
-        except League.DoesNotExist:
-            return Response({'error': 'League not found'}, status=404)
-        except LeagueParticipant.DoesNotExist:
-            return Response({'error': 'You are not a participant in this league'}, status=404)
-        except Exception as e:
-            import traceback
-            print(f"Error getting participant schedule: {str(e)}")
-            print(traceback.format_exc())
-            return Response({'error': f'An error occurred: {str(e)}'}, status=500)
-
-
 class SetLeagueStartDateView(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, league_id, *args, **kwargs):
-        """Set start date for a league (requires 8 participants and league admin)"""
+        """Set start date and end date for a league (requires league admin)"""
         try:
-            from api.apiUtils.matchupUtils import validate_and_set_start_date
+            from datetime import datetime
+            from catalog.models import LeagueParticipant
             
             league = League.objects.get(league_id=league_id)
             
-            # Get start_date from request
-            start_date = request.data.get('start_date')
-            if not start_date:
-                return Response({'error': 'start_date is required'}, status=400)
+            # Check if user is a participant and admin
+            try:
+                participant = LeagueParticipant.objects.get(league=league, user=request.user)
+                if not participant.leagueAdmin:
+                    return Response({'error': 'Only league admins can set dates'}, status=403)
+            except LeagueParticipant.DoesNotExist:
+                return Response({'error': 'You are not a participant in this league'}, status=404)
             
-            success, response_data, status_code = validate_and_set_start_date(league, start_date, request.user)
-            return Response(response_data, status=status_code)
+            # Get start_date and end_date from request
+            start_date_str = request.data.get('start_date')
+            end_date_str = request.data.get('end_date')
+            
+            if not start_date_str:
+                return Response({'error': 'start_date is required'}, status=400)
+            if not end_date_str:
+                return Response({'error': 'end_date is required'}, status=400)
+            
+            # Parse dates
+            try:
+                start_date_obj = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+                end_date_obj = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=400)
+            
+            # Validate dates
+            if end_date_obj <= start_date_obj:
+                return Response({'error': 'End date must be after start date'}, status=400)
+            
+            today = datetime.now().date()
+            if start_date_obj < today:
+                return Response({'error': 'Start date cannot be in the past'}, status=400)
+            
+            # Set dates
+            league.start_date = start_date_obj
+            league.end_date = end_date_obj
+            league.save()
+            
+            from api.serializer import LeaguesSerializer
+            serializer = LeaguesSerializer(league)
+            return Response({
+                'message': 'League dates set successfully',
+                'league': serializer.data
+            }, status=200)
             
         except League.DoesNotExist:
             return Response({'error': 'League not found'}, status=404)
         except Exception as e:
             import traceback
-            print(f"Error setting league start date: {str(e)}")
+            print(f"Error setting league dates: {str(e)}")
             print(traceback.format_exc())
             return Response({'error': f'An error occurred: {str(e)}'}, status=500)
 
 
-class GetCurrentMatchupView(generics.RetrieveAPIView):
+class DeleteLeagueView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, league_id, format=None):
-        """Get the current matchup for the user in a specific league"""
+    def delete(self, request, league_id, *args, **kwargs):
+        """Delete a league (requires league admin or superuser)"""
         try:
-            from api.apiUtils.matchupUtils import get_current_matchup_data
-            
             league = League.objects.get(league_id=league_id)
             
-            # Verify user is a participant
+            # Check if user is superuser - superusers can delete any league
+            if request.user.is_superuser:
+                league_name = league.name
+                league.delete()
+                return Response({
+                    'message': f'League "{league_name}" deleted successfully'
+                }, status=200)
+            
+            # Check if user is a participant and admin
             try:
-                user_participant = LeagueParticipant.objects.get(league=league, user=request.user)
+                participant = LeagueParticipant.objects.get(league=league, user=request.user)
+                if not participant.leagueAdmin:
+                    return Response({'error': 'Only league admins can delete leagues'}, status=403)
+                
+                # Admin can delete their league
+                league_name = league.name
+                league.delete()
+                return Response({
+                    'message': f'League "{league_name}" deleted successfully'
+                }, status=200)
             except LeagueParticipant.DoesNotExist:
                 return Response({'error': 'You are not a participant in this league'}, status=404)
-            
-            matchup_data = get_current_matchup_data(league, league_id, request.user)
-            
-            # Check if there's an error in the response
-            if 'error' in matchup_data:
-                status_code = 400 if 'not started' in matchup_data['error'] or 'No matchup' in matchup_data['error'] else 404
-                return Response(matchup_data, status=status_code)
-            
-            return Response(matchup_data, status=200)
             
         except League.DoesNotExist:
             return Response({'error': 'League not found'}, status=404)
         except Exception as e:
             import traceback
-            print(f"Error getting current matchup: {str(e)}")
+            print(f"Error deleting league: {str(e)}")
+            print(traceback.format_exc())
+            return Response({'error': f'An error occurred: {str(e)}'}, status=500)
+
+
+class UpdateUsernameView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UpdateUsernameSerializer
+
+    def get_object(self):
+        return self.request.user
+
+    def put(self, request, *args, **kwargs):
+        """Update the current user's username"""
+        try:
+            user = self.get_object()
+            serializer = self.get_serializer(user, data=request.data, partial=False)
+            
+            if serializer.is_valid():
+                old_username = user.username
+                serializer.save()
+                new_username = user.username
+                
+                return Response({
+                    'message': 'Username updated successfully',
+                    'username': new_username
+                }, status=200)
+            else:
+                return Response({
+                    'error': 'Invalid data',
+                    'errors': serializer.errors
+                }, status=400)
+                
+        except Exception as e:
+            import traceback
+            print(f"Error updating username: {str(e)}")
             print(traceback.format_exc())
             return Response({'error': f'An error occurred: {str(e)}'}, status=500)
 

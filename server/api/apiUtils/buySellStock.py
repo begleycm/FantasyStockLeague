@@ -1,5 +1,4 @@
 from decimal import Decimal
-from datetime import date
 from rest_framework.response import Response
 from catalog.models import League, LeagueParticipant, Stock, UserLeagueStock
 from api.apiUtils.utils import getOwnedStocks
@@ -11,16 +10,6 @@ def buy_stock(league_id, user, ticker, shares):
     Returns a tuple: (success: bool, response_data: dict, status_code: int)
     """
     try:
-        # Check if today is a trading day (Saturday or Sunday)
-        today = date.today()
-        day_of_week = today.weekday()  # 0 = Monday, 6 = Sunday
-        # Saturday = 5, Sunday = 6
-        if day_of_week not in [5, 6]:
-            day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-            return False, {
-                'error': f'Trading is only available on Saturday and Sunday. Today is {day_names[day_of_week]}.'
-            }, 400
-        
         # Get league and participant
         league = League.objects.get(league_id=league_id)
         participant = LeagueParticipant.objects.get(league=league, user=user)
@@ -44,10 +33,18 @@ def buy_stock(league_id, user, ticker, shares):
         user_stock, created = UserLeagueStock.objects.get_or_create(
             league_participant=participant,
             stock=stock,
-            defaults={'shares': Decimal('0.00'), 'price_at_start_of_week': stock.current_price}
+            defaults={'shares': Decimal('0.00'), 'avg_price_per_share': stock.current_price}
         )
         
-        # Update shares and balance
+        # Calculate new average price per share (weighted average)
+        if created:
+            user_stock.avg_price_per_share = stock.current_price
+        else:
+            total_cost = (user_stock.avg_price_per_share * user_stock.shares) + cost
+            total_shares = user_stock.shares + shares_decimal
+            user_stock.avg_price_per_share = total_cost / total_shares
+        
+        # Update shares
         user_stock.shares += shares_decimal
         user_stock.save()
         
@@ -77,16 +74,6 @@ def sell_stock(league_id, user, ticker, shares):
     Returns a tuple: (success: bool, response_data: dict, status_code: int)
     """
     try:
-        # Check if today is a trading day (Saturday or Sunday)
-        today = date.today()
-        day_of_week = today.weekday()  # 0 = Monday, 6 = Sunday
-        # Saturday = 5, Sunday = 6
-        if day_of_week not in [5, 6]:
-            day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-            return False, {
-                'error': f'Trading is only available on Saturday and Sunday. Today is {day_names[day_of_week]}.'
-            }, 400
-        
         # Get league and participant
         league = League.objects.get(league_id=league_id)
         participant = LeagueParticipant.objects.get(league=league, user=user)

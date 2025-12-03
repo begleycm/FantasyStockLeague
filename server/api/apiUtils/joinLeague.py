@@ -1,5 +1,6 @@
 from decimal import Decimal
 import uuid
+from datetime import date, timedelta
 from rest_framework.response import Response
 from catalog.models import League, LeagueParticipant
 from api.serializer import LeaguesSerializer
@@ -8,6 +9,7 @@ from api.serializer import LeaguesSerializer
 def join_league(league_id, user):
     """
     Utility function to join a league.
+    Automatically sets start_date and end_date when 8 participants are reached.
     Returns a tuple: (success: bool, response_data: dict, status_code: int)
     """
     if not league_id:
@@ -49,8 +51,17 @@ def join_league(league_id, user):
             leagueAdmin=False
         )
         
-        # Check if league now has 8 participants and can set start date
-        # (Start date will be set by admin when ready, not automatically)
+        # Check if league now has 8 participants and automatically set start/end dates
+        updated_participant_count = LeagueParticipant.objects.filter(league=league).count()
+        if updated_participant_count == 8 and not league.start_date:
+            # Set start date to today
+            today = date.today()
+            # Set end date to 8 weeks (56 days) from start date
+            end_date = today + timedelta(weeks=8)
+            
+            league.start_date = today
+            league.end_date = end_date
+            league.save()
         
         # Serialize league data for response
         serializer = LeaguesSerializer(league)

@@ -15,7 +15,7 @@ class Stock(models.Model):
     # Ticker as primary key
     ticker = models.CharField(primary_key=True, max_length=10)
     name = models.CharField(max_length=200)
-    start_price = models.DecimalField(max_digits=10, decimal_places=2)
+    start_price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Yesterday's closing price (updated daily)")
     current_price = models.DecimalField(max_digits=10, decimal_places=2)
     last_updated = models.DateTimeField(auto_now=True)
     
@@ -25,6 +25,27 @@ class Stock(models.Model):
     @property
     def profit(self):
         return (self.current_price - self.start_price) * self.shares
+
+
+class ApiCallTracker(models.Model):
+    """Singleton model to track API call limits (max 5 calls per 30 minutes)."""
+    id = models.IntegerField(primary_key=True, default=1, editable=False)
+    api_call_count = models.IntegerField(default=0, help_text="Number of API calls in current window")
+    window_start_time = models.DateTimeField(null=True, blank=True, help_text="Start time of current 30-minute window")
+    last_api_call_time = models.DateTimeField(null=True, blank=True, help_text="Timestamp of the last API call")
+    
+    class Meta:
+        verbose_name = "API Call Tracker"
+        verbose_name_plural = "API Call Tracker"
+    
+    def __str__(self):
+        return f"API Calls: {self.api_call_count}/5 (Window started: {self.window_start_time})"
+    
+    @classmethod
+    def get_instance(cls):
+        """Get or create the singleton instance."""
+        instance, created = cls.objects.get_or_create(id=1)
+        return instance
     
     
 class League(models.Model):
@@ -44,10 +65,6 @@ class League(models.Model):
         if self.start_date and self.end_date and self.end_date <= self.start_date:
             raise ValidationError("End date must be after start date")
 
-    def create_matchups(self):
-        """Create matchups for the league"""
-        from catalog.views import create_league_schedule
-        return create_league_schedule(self)
 
     @property
     def is_ongoing(self):
@@ -62,7 +79,7 @@ class League(models.Model):
         return self.participants.count()
     
     def can_set_start_date(self):
-        """Check if league has 8 participants and can set start date"""
+        """Check if league has 8 participants and can set start date f"""
         return self.participant_count >= 8
 
 
@@ -86,18 +103,12 @@ class UserLeagueStock(models.Model):
     league_participant = models.ForeignKey(LeagueParticipant, on_delete=models.CASCADE)
     stock = models.ForeignKey(Stock, on_delete=models.CASCADE)
  
-    price_at_start_of_week = models.DecimalField(decimal_places=2, default=0.00, max_digits=10)  # Resets Every Monday b4 market open
+    avg_price_per_share = models.DecimalField(decimal_places=2, default=0.00, max_digits=10)  # Average purchase price
     shares = models.DecimalField(decimal_places=2, default=0.01, max_digits=10)
 
     def __str__(self):
         return f"{self.league_participant} in {self.stock}"
     
-    @property
-    def weekly_profit(self):
-        """Calculate weekly profit based on price at start of week vs current price"""
-        if self.price_at_start_of_week == 0:
-            return 0
-        return (self.stock.current_price - self.price_at_start_of_week) * self.shares
     
     @property
     def total_profit(self):
@@ -105,20 +116,3 @@ class UserLeagueStock(models.Model):
         if self.avg_price_per_share == 0:
             return 0
         return (self.stock.current_price - self.avg_price_per_share) * self.shares
-
-class Matchup(models.Model):
-    """Model representing a matchup between two users in a league"""
-    league = models.ForeignKey(League, on_delete=models.CASCADE, related_name="matchups")
-    week_number = models.PositiveIntegerField()
-    participant1 = models.ForeignKey(LeagueParticipant, on_delete=models.CASCADE, related_name="matchups_as_p1")
-    participant2 = models.ForeignKey(LeagueParticipant, on_delete=models.CASCADE, related_name="matchups_as_p2")
-    start_of_week_net_worth1 = models.DecimalField(decimal_places=2, default=0.00, max_digits=10) #Calculated and stored every monday (9am b4 market open)
-    start_of_week_net_worth2 = models.DecimalField(decimal_places=2, default=0.00, max_digits=10) #Calculated and stored every monday (9am b4 market open)
-    winner = models.ForeignKey(LeagueParticipant, on_delete=models.SET_NULL, null=True, blank=True, related_name="matchup_wins")
-    
-    class Meta:
-        unique_together = ['league', 'week_number', 'participant1', 'participant2']
-        ordering = ['week_number']
-    
-    def __str__(self):
-        return f"Week {self.week_number}: {self.participant1.user.username} vs {self.participant2.user.username} ({self.league.name})"

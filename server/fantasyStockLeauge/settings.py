@@ -11,36 +11,21 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
-import os
-import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-# Environment detection
-ENVIRONMENT = os.getenv("DJANGO_ENV", "production")
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-jkjkvnv$t%4$vu4wp%ztipjjabkb-ha%q^f05t+!dx5-g4h2y=')
+SECRET_KEY = 'django-insecure-jkjkvnv$t%4$vu4wp%ztipjjabkb-ha%q^f05t+!dx5-g4h2y='
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = ENVIRONMENT != "production"
+DEBUG = True
 
-# Parse DO_APP_URL to extract the domain
-app_url = os.getenv('DO_APP_URL', '')
-app_domain = app_url.replace('https://', '').replace('http://', '').rstrip('/') if app_url else ''
-
-ALLOWED_HOSTS = ['*'] if DEBUG else [
-    app_domain,
-    'fantasy-stock-league-backend-83vib.ondigitalocean.app',
-    '.ondigitalocean.app',
-    'localhost',
-    '127.0.0.1'
-]
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -63,7 +48,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -96,36 +80,12 @@ WSGI_APPLICATION = 'fantasyStockLeauge.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-if ENVIRONMENT == "production":
-    # Use a default SQLite database if DATABASE_URL is not set (e.g., during build)
-    database_url = os.getenv("DATABASE_URL")
-    if database_url:
-        DATABASES = {
-            "default": dj_database_url.config(
-                default=database_url,
-                conn_max_age=600,
-                conn_health_checks=True,
-            )
-        }
-        # Add OPTIONS to handle PostgreSQL schema permissions
-        if DATABASES["default"].get("ENGINE") == "django.db.backends.postgresql":
-            DATABASES["default"].setdefault("OPTIONS", {})
-            DATABASES["default"]["OPTIONS"]["options"] = "-c search_path=public"
-    else:
-        # Fallback to SQLite during build phase
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
-            }
-        }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
+}
 
 
 # Password validation
@@ -162,15 +122,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-# WhiteNoise storage backend
-STORAGES = {
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
-    }
-}
+STATIC_URL = 'static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -190,15 +142,30 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 
-# Add production frontend URL when deploying
-if ENVIRONMENT == "production":
-    frontend_url = os.getenv('FRONTEND_URL')
-    if frontend_url:
-        CORS_ALLOWED_ORIGINS.append(frontend_url)
-        # Also add without trailing slash if it has one
-        CORS_ALLOWED_ORIGINS.append(frontend_url.rstrip('/'))
-
 CORS_ALLOW_CREDENTIALS = True
+
+# Logging configuration to suppress broken pipe warnings
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django.server': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'WARNING',  # Suppress broken pipe warnings
+            'propagate': False,
+        },
+    },
+}
 
 CORS_ALLOW_HEADERS = [
     'accept',
