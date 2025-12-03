@@ -156,6 +156,10 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 
+# Add deployed frontend URL from environment variable if present
+if os.getenv("FRONTEND_URL"):
+    CORS_ALLOWED_ORIGINS.append(os.getenv("FRONTEND_URL"))
+
 CORS_ALLOW_CREDENTIALS = True
 
 # Logging configuration to suppress broken pipe warnings

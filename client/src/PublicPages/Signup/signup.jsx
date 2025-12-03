@@ -29,7 +29,7 @@ function Signup() {
     setLoading(true)
 
     try {
-      const response = await fetch('http://localhost:8000/api/user/register/', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/register/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -42,7 +42,7 @@ function Signup() {
 
       if (response.ok) {
         // After successful signup, automatically log in
-        const loginResponse = await fetch('http://localhost:8000/api/token/', {
+        const loginResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/token/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

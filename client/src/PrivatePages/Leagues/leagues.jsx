@@ -24,7 +24,7 @@ function Leagues() {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/api/leagues/', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/leagues/`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -79,7 +79,7 @@ function Leagues() {
     // Start date is no longer required - will be set when 8 players join
 
     try {
-      const response = await fetch('http://localhost:8000/api/leagues/', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/leagues/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -129,7 +129,7 @@ function Leagues() {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/api/leagues/join/', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/leagues/join/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -199,7 +199,7 @@ function Leagues() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/leagues/${leagueId}/delete/`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/leagues/${leagueId}/delete/`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

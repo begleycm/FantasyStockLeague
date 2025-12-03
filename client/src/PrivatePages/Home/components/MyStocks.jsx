@@ -118,7 +118,7 @@ function MyStocks() {
     // Only fetch if cache is expired or doesn't exist
     try {
       console.log("Cache expired or missing. Fetching fresh owned stocks data from API...")
-      const response = await fetch(`http://localhost:8000/api/owned-stocks/${leagueId}/`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/owned-stocks/${leagueId}/`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

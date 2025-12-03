@@ -37,7 +37,7 @@ function UsernameModal({ isOpen, onClose }) {
 
     const token = localStorage.getItem('access_token')
     try {
-      const response = await fetch('http://localhost:8000/api/user/update-username/', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/update-username/`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

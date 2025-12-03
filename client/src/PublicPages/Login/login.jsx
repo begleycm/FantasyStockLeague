@@ -15,7 +15,7 @@ function Login() {
     setLoading(true)
 
     try {
-      const response = await fetch('http://localhost:8000/api/token/', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/token/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
