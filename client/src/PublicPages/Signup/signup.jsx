@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { API_URL } from '../../config'
 import styles from './signup.module.css'
 
 function Signup() {
@@ -30,7 +29,7 @@ function Signup() {
     setLoading(true)
 
     try {
-      const response = await fetch(`${API_URL}/api/user/register/`, {
+      const response = await fetch('http://localhost:8000/api/user/register/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -43,7 +42,7 @@ function Signup() {
 
       if (response.ok) {
         // After successful signup, automatically log in
-        const loginResponse = await fetch(`${API_URL}/api/token/`, {
+        const loginResponse = await fetch('http://localhost:8000/api/token/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

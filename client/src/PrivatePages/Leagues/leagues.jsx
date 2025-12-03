@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { API_URL } from '../../config'
 import NavBar from '../components/navBar.jsx'
 import styles from './leagues.module.css'
 
@@ -12,10 +11,7 @@ function Leagues() {
   const [isSuperuser, setIsSuperuser] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showJoinModal, setShowJoinModal] = useState(false)
-  const [showSetStartDateModal, setShowSetStartDateModal] = useState(false)
-  const [selectedLeagueForStartDate, setSelectedLeagueForStartDate] = useState(null)
   const [leagueName, setLeagueName] = useState('')
-  const [startDate, setStartDate] = useState('')
   const [joinLeagueId, setJoinLeagueId] = useState('')
   const navigate = useNavigate()
 
@@ -83,7 +79,7 @@ function Leagues() {
     // Start date is no longer required - will be set when 8 players join
 
     try {
-      const response = await fetch(`${API_URL}/api/leagues/`, {
+      const response = await fetch('http://localhost:8000/api/leagues/', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -133,7 +129,7 @@ function Leagues() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/leagues/join/`, {
+      const response = await fetch('http://localhost:8000/api/leagues/join/', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -170,10 +166,6 @@ function Leagues() {
 
   // Handle league click - navigate to home with selected league
   const handleLeagueClick = (leagueId, isParticipant, participantCount, event) => {
-    // Prevent navigation if clicking on set start date button
-    if (event && event.target.closest('.setStartDateButton')) {
-      return
-    }
     
     // Superusers can only select leagues they are participants in
     if (isSuperuser && !isParticipant) {
@@ -189,113 +181,46 @@ function Leagues() {
     navigate('/Private/Home')
   }
 
-  // Calculate the next Monday (or later if today is Monday)
-  const getNextMonday = () => {
-    const today = new Date()
-    const dayOfWeek = today.getDay() // 0 = Sunday, 1 = Monday, etc.
-    let daysUntilMonday
-    if (dayOfWeek === 0) {
-      // If Sunday, next Monday is 1 day away
-      daysUntilMonday = 1
-    } else if (dayOfWeek === 1) {
-      // If today is Monday, next Monday is 7 days away
-      daysUntilMonday = 7
-    } else {
-      // For other days, calculate days until next Monday
-      daysUntilMonday = 8 - dayOfWeek
-    }
-    const nextMonday = new Date(today)
-    nextMonday.setDate(today.getDate() + daysUntilMonday)
-    return nextMonday
-  }
-
-  // Get minimum date string for date input (next Monday)
-  const getMinDate = () => {
-    const nextMonday = getNextMonday()
-    const year = nextMonday.getFullYear()
-    const month = String(nextMonday.getMonth() + 1).padStart(2, '0')
-    const day = String(nextMonday.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
-
-  // Validate that the selected date is a Monday
-  const isMonday = (dateString) => {
-    // Parse date string (YYYY-MM-DD) to avoid timezone issues
-    const [year, month, day] = dateString.split('-').map(Number)
-    const date = new Date(year, month - 1, day) // month is 0-indexed
-    return date.getDay() === 1 // 1 = Monday
-  }
-
-  // Handle set start date
-  const handleSetStartDate = async (e) => {
-    e.preventDefault()
-    if (!selectedLeagueForStartDate || !startDate) {
-      setError('Please select a start date')
-      return
-    }
-
-    // Validate that the date is a Monday
-    const isMondayCheck = isMonday(startDate)
-    console.log('Selected date:', startDate, 'Is Monday:', isMondayCheck)
-    if (!isMondayCheck) {
-      setError('Start date must be a Monday')
-      return
-    }
-
-    // Validate that the date is the next Monday or later
-    // Parse date string to avoid timezone issues
-    const [year, month, day] = startDate.split('-').map(Number)
-    const selectedDate = new Date(year, month - 1, day)
-    selectedDate.setHours(0, 0, 0, 0)
+  const handleDeleteLeague = async (leagueId, leagueName, e) => {
+    e.stopPropagation() // Prevent card click
     
-    const nextMonday = getNextMonday()
-    nextMonday.setHours(0, 0, 0, 0)
+    const confirmed = window.confirm(
+      `Are you sure you want to delete the league "${leagueName}"? This action cannot be undone.`
+    )
     
-    console.log('Selected date:', selectedDate, 'Next Monday:', nextMonday, 'Comparison:', selectedDate < nextMonday)
-    
-    if (selectedDate < nextMonday) {
-      const nextMondayStr = getMinDate()
-      setError(`Start date must be the next Monday (${nextMondayStr}) or later`)
+    if (!confirmed) {
       return
     }
 
     const token = localStorage.getItem('access_token')
+    if (!token) {
+      setError('Please log in')
+      return
+    }
+
     try {
-      const response = await fetch(`${API_URL}/api/leagues/${selectedLeagueForStartDate}/set-start-date/`, {
-        method: 'PUT',
+      const response = await fetch(`http://localhost:8000/api/leagues/${leagueId}/delete/`, {
+        method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          start_date: startDate,
-        }),
       })
 
       if (response.ok) {
-        setShowSetStartDateModal(false)
-        setSelectedLeagueForStartDate(null)
-        setStartDate('')
+        // Refresh leagues list
+        fetchLeagues()
         setError('')
-        fetchLeagues() // Refresh leagues list
       } else {
         const errorData = await response.json()
-        // Handle different error formats
-        let errorMessage = 'Failed to set start date'
-        if (errorData.error) {
-          errorMessage = errorData.error
-        } else if (errorData.detail) {
-          errorMessage = errorData.detail
-        } else if (typeof errorData === 'string') {
-          errorMessage = errorData
-        }
-        setError(errorMessage)
-        console.error('Set start date error:', errorData)
+        setError(errorData.error || errorData.detail || 'Failed to delete league')
       }
     } catch (err) {
       setError('Network error. Please try again.')
+      console.error('Error deleting league:', err)
     }
   }
+
 
   return (
     <>
@@ -354,7 +279,6 @@ function Leagues() {
                   const isAdmin = leagueItem.leagueAdmin !== undefined ? leagueItem.leagueAdmin : false
                   const isParticipant = leagueItem.isParticipant !== undefined ? leagueItem.isParticipant : true
                   const participantCount = league.participant_count || 0
-                  const canSetStartDate = league.can_set_start_date || false
                   
                   if (!leagueId) {
                     console.error('League missing league_id:', league)
@@ -409,25 +333,12 @@ function Leagues() {
                           </>
                         ) : (
                           <p className={styles.leagueDetail} style={{ color: '#6b7280', fontStyle: 'italic' }}>
-                            Start date not set - waiting for 8 players
+                            Start date will be set automatically when 8 players join
                           </p>
                         )}
                         <p className={styles.leagueDetail}>
                           <span className={styles.label}>League ID:</span> {leagueId}
                         </p>
-                        {isAdmin && canSetStartDate && !league.start_date && (
-                          <button
-                            className={`${styles.setStartDateButton} setStartDateButton`}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setSelectedLeagueForStartDate(leagueId)
-                              setShowSetStartDateModal(true)
-                              setError('')
-                            }}
-                          >
-                            Set Start Date
-                          </button>
-                        )}
                         {isSuperuser && !isParticipant && (
                           <p className={styles.leagueDetail} style={{ color: '#6b7280', fontStyle: 'italic' }}>
                             You are not a participant in this league
@@ -437,6 +348,15 @@ function Leagues() {
                           <p className={styles.leagueDetail} style={{ color: '#f59e0b', fontStyle: 'italic' }}>
                             This league needs 8 participants before it can be selected
                           </p>
+                        )}
+                        {(isAdmin) && (
+                          <button
+                            className={styles.deleteButton}
+                            onClick={(e) => handleDeleteLeague(leagueId, league.name, e)}
+                            title={isSuperuser ? 'Delete league (Superuser)' : 'Delete league (Admin)'}
+                          >
+                            Delete League
+                          </button>
                         )}
                       </div>
                     </div>
@@ -511,50 +431,6 @@ function Leagues() {
         </div>
       )}
 
-      {/* Set Start Date Modal */}
-      {showSetStartDateModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowSetStartDateModal(false)}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <h2>Set League Start Date</h2>
-            <p style={{ color: '#6b7280', marginBottom: '20px' }}>
-              This league has 8 participants. Set the start date to begin the league.
-            </p>
-            {error && <div className={styles.errorMessage} style={{ marginBottom: '20px' }}>{error}</div>}
-            <form onSubmit={handleSetStartDate}>
-              <div className={styles.formGroup}>
-                <label htmlFor="setStartDate">Start Date (Must be a Monday)</label>
-                <input
-                  type="date"
-                  id="setStartDate"
-                  value={startDate}
-                  onChange={(e) => {
-                    setStartDate(e.target.value)
-                    setError('') // Clear error when user changes date
-                  }}
-                  min={getMinDate()}
-                  required
-                />
-                <p style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '8px' }}>
-                  The start date must be the next Monday ({getMinDate()}) or later
-                </p>
-              </div>
-              <div className={styles.modalActions}>
-                <button type="button" className={styles.cancelButton} onClick={() => {
-                  setShowSetStartDateModal(false)
-                  setSelectedLeagueForStartDate(null)
-                  setStartDate('')
-                  setError('')
-                }}>
-                  Cancel
-                </button>
-                <button type="submit" className={styles.submitButton}>
-                  Set Start Date
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </>
   )
 }

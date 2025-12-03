@@ -297,6 +297,30 @@
   margin-top: 32px;
 }
 
+.deleteButton {
+  margin-top: 16px;
+  padding: 10px 20px;
+  background: #ef4444;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.deleteButton:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
+.deleteButton:active {
+  transform: translateY(0);
+}
+
 .infoMessage {
   background-color: #f3f4f6;
   border: 1px solid #e5e7eb;

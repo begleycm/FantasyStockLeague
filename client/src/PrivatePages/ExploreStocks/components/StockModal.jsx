@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { API_URL } from '../../../config'
 import styles from './StockModal.module.css'
 
 function StockModal({ stock, isOpen, onClose }) {
@@ -25,7 +24,7 @@ function StockModal({ stock, isOpen, onClose }) {
     
     const token = localStorage.getItem('access_token')
     try {
-      const response = await fetch(`${API_URL}/api/stocks/info/${leagueId}/${stock.ticker}/`, {
+      const response = await fetch(`http://localhost:8000/api/stocks/info/${leagueId}/${stock.ticker}/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -48,29 +47,10 @@ function StockModal({ stock, isOpen, onClose }) {
   const change = stock.change ?? (currentPrice - startPrice)
   const changePercent = stock.changePercent ?? (startPrice !== 0 ? (change / startPrice) * 100 : 0)
 
-  // Check if today is Saturday (6) or Sunday (0)
-  const isTradingDay = () => {
-    const today = new Date()
-    const dayOfWeek = today.getDay() // 0 = Sunday, 6 = Saturday
-    return dayOfWeek === 0 || dayOfWeek === 6
-  }
-
-  const tradingDayMessage = () => {
-    const today = new Date()
-    const dayOfWeek = today.getDay()
-    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-    return `Trading is only available on Saturday and Sunday. Today is ${dayNames[dayOfWeek]}.`
-  }
-
   const handleBuy = async (e) => {
     e.preventDefault()
     if (!leagueId) {
       setError('Please select a league first')
-      return
-    }
-
-    if (!isTradingDay()) {
-      setError('Trading is only available on Saturday and Sunday')
       return
     }
 
@@ -86,7 +66,7 @@ function StockModal({ stock, isOpen, onClose }) {
 
     const token = localStorage.getItem('access_token')
     try {
-      const response = await fetch(`${API_URL}/api/stocks/buy/`, {
+      const response = await fetch('http://localhost:8000/api/stocks/buy/', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -104,6 +84,17 @@ function StockModal({ stock, isOpen, onClose }) {
         setSuccess(data.message || 'Stock purchased successfully')
         setBuyShares('')
         await fetchStockInfo() // Refresh balance and shares
+        
+        // Invalidate owned stocks cache and notify MyStocks component
+        if (leagueId) {
+          const cacheKey = `owned_stocks_cache_${leagueId}`
+          const timestampKey = `owned_stocks_cache_timestamp_${leagueId}`
+          localStorage.removeItem(cacheKey)
+          localStorage.removeItem(timestampKey)
+          
+          // Dispatch custom event to notify MyStocks component
+          window.dispatchEvent(new CustomEvent('stocksUpdated', { detail: { leagueId } }))
+        }
       } else {
         setError(data.error || 'Failed to buy stock')
       }
@@ -118,11 +109,6 @@ function StockModal({ stock, isOpen, onClose }) {
     e.preventDefault()
     if (!leagueId) {
       setError('Please select a league first')
-      return
-    }
-
-    if (!isTradingDay()) {
-      setError('Trading is only available on Saturday and Sunday')
       return
     }
 
@@ -143,7 +129,7 @@ function StockModal({ stock, isOpen, onClose }) {
 
     const token = localStorage.getItem('access_token')
     try {
-      const response = await fetch(`${API_URL}/api/stocks/sell/`, {
+      const response = await fetch('http://localhost:8000/api/stocks/sell/', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -161,6 +147,17 @@ function StockModal({ stock, isOpen, onClose }) {
         setSuccess(data.message || 'Stock sold successfully')
         setSellShares('')
         await fetchStockInfo() // Refresh balance and shares
+        
+        // Invalidate owned stocks cache and notify MyStocks component
+        if (leagueId) {
+          const cacheKey = `owned_stocks_cache_${leagueId}`
+          const timestampKey = `owned_stocks_cache_timestamp_${leagueId}`
+          localStorage.removeItem(cacheKey)
+          localStorage.removeItem(timestampKey)
+          
+          // Dispatch custom event to notify MyStocks component
+          window.dispatchEvent(new CustomEvent('stocksUpdated', { detail: { leagueId } }))
+        }
       } else {
         setError(data.error || 'Failed to sell stock')
       }
@@ -173,7 +170,6 @@ function StockModal({ stock, isOpen, onClose }) {
 
   const buyCost = buyShares ? (parseFloat(buyShares) * currentPrice).toFixed(2) : '0.00'
   const sellRevenue = sellShares ? (parseFloat(sellShares) * currentPrice).toFixed(2) : '0.00'
-  const canTrade = isTradingDay()
 
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
@@ -255,11 +251,6 @@ function StockModal({ stock, isOpen, onClose }) {
               </div>
             </div>
 
-            {!canTrade && (
-              <div className={styles.errorMessage} style={{ marginBottom: '20px', textAlign: 'center' }}>
-                {tradingDayMessage()}
-              </div>
-            )}
             {activeTab === 'buy' ? (
               <form onSubmit={handleBuy} className={styles.tradeForm}>
                 <div className={styles.formGroup}>
@@ -273,7 +264,6 @@ function StockModal({ stock, isOpen, onClose }) {
                     onChange={(e) => setBuyShares(e.target.value)}
                     placeholder="Enter shares"
                     required
-                    disabled={!canTrade}
                   />
                   <div className={styles.costInfo}>
                     Cost: ${buyCost}
@@ -284,7 +274,7 @@ function StockModal({ stock, isOpen, onClose }) {
                 <button 
                   type="submit" 
                   className={styles.buyButton}
-                  disabled={loading || !canTrade || !buyShares || parseFloat(buyShares) <= 0}
+                  disabled={loading || !buyShares || parseFloat(buyShares) <= 0}
                 >
                   {loading ? 'Processing...' : 'Buy Stock'}
                 </button>
@@ -303,7 +293,6 @@ function StockModal({ stock, isOpen, onClose }) {
                     onChange={(e) => setSellShares(e.target.value)}
                     placeholder={`Max: ${ownedShares.toFixed(2)}`}
                     required
-                    disabled={!canTrade}
                   />
                   <div className={styles.costInfo}>
                     Revenue: ${sellRevenue}
@@ -314,7 +303,7 @@ function StockModal({ stock, isOpen, onClose }) {
                 <button 
                   type="submit" 
                   className={styles.sellButton}
-                  disabled={loading || !canTrade || !sellShares || parseFloat(sellShares) <= 0 || parseFloat(sellShares) > ownedShares}
+                  disabled={loading || !sellShares || parseFloat(sellShares) <= 0 || parseFloat(sellShares) > ownedShares}
                 >
                   {loading ? 'Processing...' : 'Sell Stock'}
                 </button>

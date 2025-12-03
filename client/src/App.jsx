@@ -4,9 +4,9 @@ import Login from "./PublicPages/Login/login.jsx"
 import Home from "./PrivatePages/Home/home.jsx"
 import ProtectedRoute from "./components/protectedRoute.jsx"
 import LeagueRouteGuard from "./components/LeagueRouteGuard.jsx"
-import MatchUp from "./PrivatePages/MatchUp/matchUp.jsx"
 import ExploreStocks from "./PrivatePages/ExploreStocks/exploreStocks.jsx"
 import Leagues from "./PrivatePages/Leagues/leagues.jsx"
+import NotFound from "./PublicPages/NotFound/NotFound.jsx"
 
 function App() {
   return (
@@ -17,8 +17,10 @@ function App() {
 
         <Route path="/Private/Leagues" element={<ProtectedRoute><Leagues></Leagues></ProtectedRoute>}></Route>
         <Route path="/Private/Home" element={<ProtectedRoute><LeagueRouteGuard><Home></Home></LeagueRouteGuard></ProtectedRoute>}></Route>
-        <Route path="/Private/MatchUp" element={<ProtectedRoute><LeagueRouteGuard><MatchUp></MatchUp></LeagueRouteGuard></ProtectedRoute>}></Route>
         <Route path="/Private/ExploreStocks" element={<ProtectedRoute><LeagueRouteGuard><ExploreStocks></ExploreStocks></LeagueRouteGuard></ProtectedRoute>}></Route>
+        
+        {/* Catch-all route for 404 */}
+        <Route path="*" element={<NotFound></NotFound>}></Route>
       </Routes>
     </BrowserRouter>
   )

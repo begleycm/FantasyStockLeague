@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { API_URL } from '../../config'
 import styles from './login.module.css'
 
 function Login() {
@@ -16,7 +15,7 @@ function Login() {
     setLoading(true)
 
     try {
-      const response = await fetch(`${API_URL}/api/token/`, {
+      const response = await fetch('http://localhost:8000/api/token/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

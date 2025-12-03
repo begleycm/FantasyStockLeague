@@ -25,7 +25,7 @@
   padding: 24px 0;
   border-bottom: 2px solid #e5e7eb;
   gap: 24px;
-  height: 72px;
+  min-height: 72px;
 }
 
 .sectionHeader h2 {
@@ -148,6 +148,8 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
+    min-height: auto;
+    height: auto;
   }
   
   .tableHeader,
@@ -164,7 +166,26 @@
 
 @media (max-width: 768px) {
   .allStocksSection {
-    padding: 20px;
+    padding: 16px;
+  }
+  
+  .sectionHeader {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding: 16px 0;
+    min-height: auto;
+    height: auto;
+  }
+  
+  .sectionHeader h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0;
+  }
+  
+  .stocksTable {
+    margin-top: 0;
   }
   
   .tableHeader,

@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react'
-import { API_URL } from '../../../config'
 import Pagination from '../../../components/Pagination.jsx'
 import styles from './MyStocks.module.css'
+
+const OWNED_STOCKS_CACHE_KEY = 'owned_stocks_cache'
+const OWNED_STOCKS_CACHE_TIMESTAMP_KEY = 'owned_stocks_cache_timestamp'
+const CACHE_DURATION = 30 * 60 * 1000 // 30 minutes in milliseconds (matches backend API cooldown)
 
 function MyStocks() {
   const [stocks, setStocks] = useState([])
@@ -12,9 +15,55 @@ function MyStocks() {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 9
 
-  useEffect(() => {
-    fetchOwnedStocks()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // Cache utility functions
+  const getCachedOwnedStocks = () => {
+    try {
+      const leagueId = localStorage.getItem('selected_league_id')
+      if (!leagueId) return null
+      
+      const cacheKey = `${OWNED_STOCKS_CACHE_KEY}_${leagueId}`
+      const timestampKey = `${OWNED_STOCKS_CACHE_TIMESTAMP_KEY}_${leagueId}`
+      
+      const cachedData = localStorage.getItem(cacheKey)
+      const cachedTimestamp = localStorage.getItem(timestampKey)
+      
+      if (cachedData && cachedTimestamp) {
+        const timestamp = parseInt(cachedTimestamp, 10)
+        const now = Date.now()
+        const age = now - timestamp
+        
+        // Check if cache is still valid (less than CACHE_DURATION old)
+        if (age < CACHE_DURATION) {
+          console.log(`Using cached owned stocks data (${Math.round(age / 1000)}s old)`)
+          return JSON.parse(cachedData)
+        } else {
+          console.log('Cache expired, fetching fresh data')
+          // Clear expired cache
+          localStorage.removeItem(cacheKey)
+          localStorage.removeItem(timestampKey)
+        }
+      }
+    } catch (error) {
+      console.error('Error reading cache:', error)
+    }
+    return null
+  }
+
+  const setCachedOwnedStocks = (data) => {
+    try {
+      const leagueId = localStorage.getItem('selected_league_id')
+      if (!leagueId) return
+      
+      const cacheKey = `${OWNED_STOCKS_CACHE_KEY}_${leagueId}`
+      const timestampKey = `${OWNED_STOCKS_CACHE_TIMESTAMP_KEY}_${leagueId}`
+      
+      localStorage.setItem(cacheKey, JSON.stringify(data))
+      localStorage.setItem(timestampKey, Date.now().toString())
+      console.log('Owned stocks data cached')
+    } catch (error) {
+      console.error('Error caching owned stocks:', error)
+    }
+  }
 
   const fetchOwnedStocks = async () => {
     const leagueId = localStorage.getItem('selected_league_id')
@@ -31,8 +80,45 @@ function MyStocks() {
       return
     }
 
+    // Try to load from cache first for instant display
+    const cachedData = getCachedOwnedStocks()
+    if (cachedData) {
+      const leagueId = localStorage.getItem('selected_league_id')
+      const timestampKey = `${OWNED_STOCKS_CACHE_TIMESTAMP_KEY}_${leagueId}`
+      const cachedTimestamp = localStorage.getItem(timestampKey)
+      const age = cachedTimestamp ? Math.round((Date.now() - parseInt(cachedTimestamp, 10)) / 1000) : 0
+      const remainingTime = cachedTimestamp ? Math.round((CACHE_DURATION - (Date.now() - parseInt(cachedTimestamp, 10))) / 1000) : 0
+      console.log(`Using cached owned stocks (${age}s old, ${remainingTime}s remaining). Not calling API.`)
+      const stocksData = cachedData.stocks || cachedData
+      const transformedStocks = stocksData.map(stock => ({
+        ticker: stock.ticker,
+        name: stock.name,
+        startPrice: parseFloat(stock.start_price) || 0,
+        currentPrice: parseFloat(stock.current_price) || 0,
+        avgPricePerShare: parseFloat(stock.avg_price_per_share) || 0,
+        shares: parseFloat(stock.shares) || 0
+      }))
+      setStocks(transformedStocks)
+      
+      if (cachedData.current_balance !== undefined) {
+        setCurrentBalance(cachedData.current_balance || 0)
+      }
+      if (cachedData.net_worth !== undefined) {
+        setNetWorth(cachedData.net_worth || 0)
+      } else if (cachedData.total_stock_value !== undefined && cachedData.current_balance !== undefined) {
+        setNetWorth((cachedData.total_stock_value || 0) + (cachedData.current_balance || 0))
+      }
+      
+      setError('')
+      setLoading(false)
+      // Cache is valid, don't fetch fresh data
+      return
+    }
+
+    // Only fetch if cache is expired or doesn't exist
     try {
-      const response = await fetch(`${API_URL}/api/owned-stocks/${leagueId}/`, {
+      console.log("Cache expired or missing. Fetching fresh owned stocks data from API...")
+      const response = await fetch(`http://localhost:8000/api/owned-stocks/${leagueId}/`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -49,7 +135,7 @@ function MyStocks() {
           name: stock.name,
           startPrice: parseFloat(stock.start_price) || 0,
           currentPrice: parseFloat(stock.current_price) || 0,
-          priceAtStartOfWeek: parseFloat(stock.price_at_start_of_week) || 0,
+          avgPricePerShare: parseFloat(stock.avg_price_per_share) || 0,
           shares: parseFloat(stock.shares) || 0
         }))
         setStocks(transformedStocks)
@@ -64,12 +150,20 @@ function MyStocks() {
           setNetWorth((data.total_stock_value || 0) + (data.current_balance || 0))
         }
         
+        // Cache the fresh data
+        setCachedOwnedStocks(data)
+        
         setError('')
       } else if (response.status === 401) {
         // Token expired or invalid
         setError('Your session has expired. Please log in again.')
         localStorage.removeItem('access_token')
         localStorage.removeItem('selected_league_id')
+        // Clear cache on logout
+        const cacheKey = `${OWNED_STOCKS_CACHE_KEY}_${leagueId}`
+        const timestampKey = `${OWNED_STOCKS_CACHE_TIMESTAMP_KEY}_${leagueId}`
+        localStorage.removeItem(cacheKey)
+        localStorage.removeItem(timestampKey)
         // Optionally redirect to login
         window.location.href = '/Login'
       } else {
@@ -86,18 +180,33 @@ function MyStocks() {
     }
   }
 
+  useEffect(() => {
+    fetchOwnedStocks()
+    
+    // Listen for stock purchase/sale events to refresh immediately
+    const handleStocksUpdated = (event) => {
+      const leagueId = localStorage.getItem('selected_league_id')
+      if (event.detail && event.detail.leagueId === leagueId) {
+        console.log('Stocks updated event received, refreshing MyStocks...')
+        fetchOwnedStocks()
+      }
+    }
+    
+    window.addEventListener('stocksUpdated', handleStocksUpdated)
+    
+    return () => {
+      window.removeEventListener('stocksUpdated', handleStocksUpdated)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Calculate totals
   const totalStockValue = stocks.reduce((sum, stock) => sum + (stock.currentPrice * stock.shares), 0)
-  // Calculate weekly profit using price_at_start_of_week
-  const totalWeeklyProfit = stocks.reduce((sum, stock) => {
-    if (stock.priceAtStartOfWeek > 0) {
-      return sum + ((stock.currentPrice - stock.priceAtStartOfWeek) * stock.shares)
-    }
-    return sum
-  }, 0)
   
   // Net worth = stock value + current balance
   const calculatedNetWorth = netWorth > 0 ? netWorth : (totalStockValue + currentBalance)
+  
+  // Calculate all-time profit: net worth - starting balance (10000)
+  const totalAllTimeProfit = calculatedNetWorth - 10000
 
   // Calculate pagination
   const totalPages = Math.ceil(stocks.length / itemsPerPage)
@@ -128,19 +237,19 @@ function MyStocks() {
             <div className={styles.tableHeader}>
               <div>Ticker</div>
               <div>Stock Name</div>
-              <div>Week Start Price</div>
+              <div>Avg Purchase Price</div>
               <div>Current Price</div>
-              <div>Weekly Profit</div>
+              <div>All-Time Profit</div>
               <div>Shares</div>
             </div>
             <div className={styles.stockTableBody}>
               {currentStocks.map((stock, index) => {
-                // Calculate weekly profit using price_at_start_of_week
-                const weeklyProfit = stock.priceAtStartOfWeek > 0 
-                  ? (stock.currentPrice - stock.priceAtStartOfWeek) * stock.shares
+                // Calculate all-time profit using avg_price_per_share
+                const allTimeProfit = stock.avgPricePerShare > 0 
+                  ? (stock.currentPrice - stock.avgPricePerShare) * stock.shares
                   : 0
-                const profitPercent = stock.priceAtStartOfWeek > 0 
-                  ? ((stock.currentPrice - stock.priceAtStartOfWeek) / stock.priceAtStartOfWeek) * 100 
+                const profitPercent = stock.avgPricePerShare > 0 
+                  ? ((stock.currentPrice - stock.avgPricePerShare) / stock.avgPricePerShare) * 100 
                   : 0
                 
                 return (
@@ -148,12 +257,12 @@ function MyStocks() {
                     <div className={styles.ticker}>{stock.ticker}</div>
                     <div className={styles.stockName}>{stock.name}</div>
                     <div className={styles.startPrice}>
-                      {stock.priceAtStartOfWeek > 0 ? `$${stock.priceAtStartOfWeek.toFixed(2)}` : 'N/A'}
+                      {stock.avgPricePerShare > 0 ? `$${stock.avgPricePerShare.toFixed(2)}` : 'N/A'}
                     </div>
                     <div className={styles.currentPrice}>${stock.currentPrice.toFixed(2)}</div>
-                    <div className={`${styles.profit} ${weeklyProfit >= 0 ? styles.profitPositive : styles.profitNegative}`}>
-                      {stock.priceAtStartOfWeek > 0 ? (
-                        <>${weeklyProfit.toFixed(2)} ({profitPercent.toFixed(1)}%)</>
+                    <div className={`${styles.profit} ${allTimeProfit >= 0 ? styles.profitPositive : styles.profitNegative}`}>
+                      {stock.avgPricePerShare > 0 ? (
+                        <>${allTimeProfit.toFixed(2)} ({profitPercent.toFixed(1)}%)</>
                       ) : (
                         <>N/A</>
                       )}
@@ -185,9 +294,9 @@ function MyStocks() {
               <span className={styles.summaryValue}>${calculatedNetWorth.toFixed(2)}</span>
             </div>
             <div className={styles.summaryItem}>
-              <span className={styles.summaryLabel}>Total Weekly Profit:</span>
-              <span className={`${styles.summaryValue} ${totalWeeklyProfit >= 0 ? styles.profitPositive : styles.profitNegative}`}>
-                {totalWeeklyProfit >= 0 ? '+' : ''}${totalWeeklyProfit.toFixed(2)}
+              <span className={styles.summaryLabel}>Total All-Time Profit:</span>
+              <span className={`${styles.summaryValue} ${totalAllTimeProfit >= 0 ? styles.profitPositive : styles.profitNegative}`}>
+                {totalAllTimeProfit >= 0 ? '+' : ''}${totalAllTimeProfit.toFixed(2)}
               </span>
             </div>
           </div>
