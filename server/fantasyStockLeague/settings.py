@@ -58,7 +58,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'fantasyStockLeauge.urls'
+ROOT_URLCONF = 'fantasyStockLeague.urls'
 
 TEMPLATES = [
     {
@@ -75,7 +75,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'fantasyStockLeauge.wsgi.application'
+WSGI_APPLICATION = 'fantasyStockLeague.wsgi.application'
 
 
 # Database

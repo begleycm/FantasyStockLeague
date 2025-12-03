@@ -3,7 +3,7 @@
 import os
 import django
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'fantasyStockLeauge.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'fantasyStockLeague.settings')
 django.setup()
 
 from catalog.models import Stock
